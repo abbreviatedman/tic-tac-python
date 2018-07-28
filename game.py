@@ -1,13 +1,50 @@
 YES_ANSWERS = ["y", "yes"]
+BOARD = 'board'
+APP_IS_RUNNING = 'app_is_running'
+GAME_IS_RUNNING = 'game_is_running'
+TURN = 'turn'
+AVAILABLE_SPACES = 'available_spaces'
 
-board = []
-app_is_running = True
-game_is_running = True
-turn = 'X'
+game_state = {
+    BOARD: [],
+    APP_IS_RUNNING: True,
+    GAME_IS_RUNNING: True,
+    TURN: "X",
+    AVAILABLE_SPACES: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+}
+
+
+def initialize_game():
+    create_blank_board()
+    game_state[APP_IS_RUNNING] = True
+    game_state[GAME_IS_RUNNING] = True
+    game_state[TURN] = 'X'
+    game_state[AVAILABLE_SPACES] = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+
+def create_blank_board():
+    game_state[BOARD] = [
+        ["_", "_", "_"],
+        ["_", "_", "_"],
+        [" ", " ", " "]
+    ]
+
+
+def play_game():
+    while game_state[GAME_IS_RUNNING]:
+        turn = game_state[TURN]
+        print_board()
+        print(f"\nIt's {turn}'s turn.")
+        row_number, column_number = get_player_selection()
+        game_state[BOARD][row_number][column_number] = game_state[TURN]
+        if someone_won(row_number, column_number) or tie_occurred():
+            game_state[GAME_IS_RUNNING] = False
+
+        switch_turn()
 
 
 def print_board():
-    for row_index, row in enumerate(board):
+    for row_index, row in enumerate(game_state[BOARD]):
         row_string = ""
         for cell_index, cell in enumerate(row):
             if row_index == 2:
@@ -21,75 +58,83 @@ def print_board():
         print(row_string)
 
 
-def switch_turn():
-    global turn
-    if turn == "X":
-        turn = "O"
-    else:
-        turn = "X"
-
-
 def get_player_selection():
-        space_selected = int(input("Where do you want to go? (1-9)\n").strip()) - 1
-        row_number = int(space_selected / 3)
-        column_number = space_selected % 3
-        
-        return (row_number, column_number)
+    formatted_choice = ""
+    available_spaces = game_state[AVAILABLE_SPACES]
 
+    while formatted_choice not in available_spaces:
 
-def play_game():
-    global game_is_running
-    while game_is_running:
-        print_board()
-        print(f"It's {turn}'s turn.\n")
-        row_number, column_number = get_player_selection()
-        board[row_number][column_number] = turn
-        if someone_won(row_number, column_number) or tie_occurred():
-            game_is_running = False
-
-        switch_turn()
+        user_choice = input("Where do you want to go? (1-9)\n")
+        try:
+            formatted_choice = int(user_choice.strip())
+            if formatted_choice not in available_spaces:
+                print("That's not an available space!")
+        except ValueError:
+            print("Sorry, that's not a number!")
     
+    available_space_index = available_spaces.index(formatted_choice)
+    del game_state[AVAILABLE_SPACES][available_space_index]
 
-def create_blank_board():
-    global board
-    board = [
-        ["_", "_", "_"],
-        ["_", "_", "_"],
-        [" ", " ", " "]
-    ]
+    board_index = formatted_choice - 1
+    row_number, column_number = divmod(board_index, 3)
 
-
-def someone_won_horizontally(row_number):
-    row = board[row_number]
-    return row[0] == row[1] == row[2]
-
-
-def southeast_diagonal_win(row_number, column_number):
-    return board[0][0] == board[1][1] == board[2][2]
-
-
-def northeast_diagonal_win(row_number, column_number):
-    return board[2][0] == board[1][1] == board[0][2]
-
-def someone_won_vertically(column_number):
-    return board[0][column_number] == board[1][column_number] == board[2][column_number]
-
-
-def someone_won_diagonally(row_number, column_number):
-    return southeast_diagonal_win(row_number, column_number) or northeast_diagonal_win(row_number, column_number)
+    return (row_number, column_number)
 
 
 def someone_won(row_number, column_number):
-    won = someone_won_horizontally(row_number) or someone_won_vertically(column_number) or someone_won_diagonally(row_number, column_number)
+    won = someone_won_horizontally(row_number) or \
+        someone_won_vertically(column_number) or \
+        someone_won_diagonally(row_number, column_number)
+
     if won:
+        turn = game_state[TURN]
         print_board()
-        print(f"{turn} won!")
+        print(f"{turn} WON!!")
 
     return won
 
 
+def someone_won_horizontally(row_number):
+    row = game_state[BOARD][row_number]
+
+    return row[0] \
+        == row[1] \
+        == row[2]
+
+
+def someone_won_vertically(column_number):
+    board = game_state[BOARD]
+
+    return board[0][column_number] \
+        == board[1][column_number] \
+        == board[2][column_number]
+
+
+def someone_won_diagonally(row_number, column_number):
+    return southeast_diagonal_win(row_number, column_number) or \
+        northeast_diagonal_win(row_number, column_number)
+
+
+def southeast_diagonal_win(row_number, column_number):
+    board = game_state[BOARD]
+
+    return board[0][0] \
+        == board[1][1] \
+        == board[2][2]
+
+
+def northeast_diagonal_win(row_number, column_number):
+    board = game_state[BOARD]
+
+    return board[2][0] == board[1][1] == board[0][2]
+
+
 def tie_occurred():
-    tied = not "_" in board[0] and not "_" in board[1] and not " " in board[2]
+    board = game_state[BOARD]
+    tied = not "_" in board[0] and \
+        not "_" in board[1] and \
+        not " " in board[2]
+
     if tied:
         print_board()
         print("It's a tie!")
@@ -97,9 +142,25 @@ def tie_occurred():
     return tied
 
 
-while(app_is_running):
-    create_blank_board()
+def switch_turn():
+    if game_state[TURN] == "X":
+        set_turn("O")
+    else:
+        set_turn("X")
+
+
+def set_turn(turn):
+    game_state[TURN] = turn
+
+
+while(game_state[APP_IS_RUNNING]):
+    initialize_game()
     play_game()
     
-    play_again = input("Shall we play again? (y/n)\n").lower().strip()
-    app_is_running = play_again in YES_ANSWERS
+    play_again = (
+        input("Shall we play again? (y/n)\n")
+            .lower()
+            .strip()
+    )
+
+    game_state[APP_IS_RUNNING] = play_again in YES_ANSWERS
