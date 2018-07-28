@@ -68,12 +68,11 @@ def get_player_selection():
         try:
             formatted_choice = int(user_choice.strip())
             if formatted_choice not in available_spaces:
-                print("That's not an available space!")
+                print("Sorry, that's not an available space!")
         except ValueError:
             print("Sorry, that's not a number!")
-    
-    available_space_index = available_spaces.index(formatted_choice)
-    del game_state[AVAILABLE_SPACES][available_space_index]
+
+    game_state[AVAILABLE_SPACES].remove(formatted_choice)
 
     board_index = formatted_choice - 1
     row_number, column_number = divmod(board_index, 3)
